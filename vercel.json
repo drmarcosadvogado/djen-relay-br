@@ -1,5 +1,5 @@
 {
-  "functions": {
-    "api/comunica.js": { "regions": ["gru1"] }
-  }
+    "functions": {
+          "api/*.js": { "regions": ["gru1"], "maxDuration": 30 }
+    }
 }
