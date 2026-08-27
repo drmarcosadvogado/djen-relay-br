@@ -27,6 +27,14 @@ function extractComunicacoes(parsed) {
       return [];
 }
 
+function nomesPorPolo(c, polo) {
+      const destinatarios = Array.isArray(c.destinatarios) ? c.destinatarios : [];
+      return destinatarios
+              .filter(function (d) { return d && d.polo === polo; })
+              .map(function (d) { return d.nome; })
+              .filter(Boolean);
+}
+
 function achatarLinha(c, adv, tribunalParam) {
       return {
               id: c.id,
@@ -37,6 +45,9 @@ function achatarLinha(c, adv, tribunalParam) {
               numero_processo: c.numeroprocessocommascara || c.numero_processo,
               meio: c.meio,
               texto: c.texto,
+              classe: c.nomeClasse || null,
+              polo_ativo: nomesPorPolo(c, 'A').join('; ') || null,
+              polo_passivo: nomesPorPolo(c, 'P').join('; ') || null,
               oab: adv.numero_oab,
               uf_oab: adv.uf_oab,
               advogado: adv.nome,
