@@ -16,7 +16,14 @@
 const AdmZip = require('adm-zip');
 
 function normOab(numero, uf) {
-      return String(numero || '').replace(/\D/g, '') + '-' + String(uf || '').toUpperCase();
+      // Remove nao-digitos e zeros a esquerda ("0182051" e "182051" passam a ser iguais).
+      return String(numero || '').replace(/\D/g, '').replace(/^0+/, '') + '-' + String(uf || '').toUpperCase().trim();
+}
+
+function normOabParam(s) {
+      const i = String(s).lastIndexOf('-');
+      if (i === -1) return normOab(s, '');
+      return normOab(String(s).slice(0, i), String(s).slice(i + 1));
 }
 
 function extractComunicacoes(parsed) {
@@ -68,7 +75,7 @@ module.exports = async (req, res) => {
       }
 
       const oabList = oabsParam
-        ? String(oabsParam).split(',').map(function (s) { return s.trim(); }).filter(Boolean)
+        ? String(oabsParam).split(',').map(function (s) { return s.trim(); }).filter(Boolean).map(normOabParam)
               : null;
 
       try {
@@ -129,6 +136,13 @@ module.exports = async (req, res) => {
                         linhas = allComunicacoes;
               }
 
+        // Sinais de alerta aditivos (nao alteram campos existentes): permitem ao
+        // consumidor distinguir "nada para o advogado" de "caderno vazio/ilegivel".
+        const alertas = [];
+              if (entries.length === 0) alertas.push('zip_sem_arquivos');
+              if (allComunicacoes.length === 0) alertas.push('caderno_vazio');
+              if (parseErrors.length) alertas.push('parse_errors');
+
         res.status(200).json({
                   status: 'success',
                   tribunal: tribunal,
@@ -137,6 +151,9 @@ module.exports = async (req, res) => {
                   total_no_caderno: allComunicacoes.length,
                   total_filtrado: linhas.length,
                   arquivos_no_zip: entries.length,
+                  caderno_vazio: allComunicacoes.length === 0,
+                  parse_errors_count: parseErrors.length,
+                  alertas: alertas,
                   parse_errors: parseErrors.length ? parseErrors : undefined,
                   comunicacoes: linhas,
         });
